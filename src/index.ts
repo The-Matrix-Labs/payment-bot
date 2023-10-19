@@ -131,15 +131,16 @@ bot.action(/(\d)day-ad/, async (ctx: SessionContext) => {
         data: string;
     }
 
-    const session: IUserSession = ctx.session;
-    const option: string = (ctx.callbackQuery as CustomCallbackQuery)?.data;
-
+    const option: string = (ctx.callbackQuery as CustomCallbackQuery).data;
+    
     const amount: number = AD_OPTIONS[option as keyof typeof AD_OPTIONS].amount;
     const duration: number = AD_OPTIONS[option as keyof typeof AD_OPTIONS].duration;
-
+    
+    const session: IUserSession = ctx.session;
     session.amount = amount;
     
     const template = TEMPLATES.paymentTemplateWithAddress(ctx.session.wallet.address, amount, duration)
+
     ctx.reply(template, {
         parse_mode: 'HTML',
         reply_markup: {

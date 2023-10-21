@@ -18,3 +18,11 @@ export interface IUser extends Document {
     lastName: string;
     wallet?: IWallet | string;
 }
+
+export interface ITransactionDocument extends Document {
+    to: string;
+    value: string;
+    hash: string;
+    from: string;
+    confirmations: number;
+}

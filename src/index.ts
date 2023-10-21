@@ -8,9 +8,10 @@ import { UserModel } from './models/user.model';
 import { WalletModel } from './models/wallet.model';
 import { AD_OPTIONS } from './constants/constant';
 import { CallbackQuery } from 'telegraf/typings/core/types/typegram';
+import { decryptData, encryptData } from './cryptoUtils/cryptoUtils';
+
 
 const TEMPLATES = require('./templates/templates');
-
 
 interface IUserSession {
     wallet: {
@@ -41,9 +42,11 @@ bot.use(async (ctx, next) => {
 
     try {
         const userData: IUser | null = await UserModel.findOne({ chatID: ctx.chat?.id }).populate('wallet');
+        
         if (userData && userData.wallet && typeof userData.wallet !== 'string') {
+            const decryptPrivateKey = decryptData(userData.wallet.privateKey);
             ctx.session.wallet.address = userData.wallet.address
-            ctx.session.wallet.privateKey = userData.wallet.privateKey
+            ctx.session.wallet.privateKey = decryptPrivateKey
         }
     } catch (error) {
         console.log('error: ', error);
@@ -57,6 +60,14 @@ bot.start(async (ctx: SessionContext) => {
 
     if (!ctx.session.wallet.address) {
         const newWallet: IGeneratedWallet = generateWallet();
+
+        ctx.session.wallet.address = newWallet.address;
+        ctx.session.wallet.privateKey = newWallet.privateKey;
+
+        //encrypting the data before saving it to the database
+        newWallet.mnemonic = encryptData(newWallet.mnemonic);
+        newWallet.privateKey = encryptData(newWallet.privateKey);
+
 
         const wallet = new WalletModel(newWallet);
         await wallet.save();
@@ -72,12 +83,7 @@ bot.start(async (ctx: SessionContext) => {
         const user = new UserModel(userData);
         await user.save();
 
-        ctx.session.wallet.address = newWallet.address;
-        ctx.session.wallet.privateKey = newWallet.privateKey;
-
     }
-
-
 
     ctx.reply("Hey, I'm a bot!", {
         parse_mode: "HTML",
@@ -158,12 +164,20 @@ bot.action("validate-payment", async (ctx: SessionContext) => {
     const wallet = ctx.session.wallet;
     const amount = ctx.session.amount;
 
-    const isPaymentValid = await validatePayment(wallet, amount);
+    const userFromDB = await UserModel.findOne({ chatID: ctx.chat?.id });
+    if(userFromDB) {
+        const userID = userFromDB._id.toString();
 
-    if (isPaymentValid) {
-        return ctx.reply("Payment Validated! Your AD will be live shortly!");
+        const isPaymentValid = await validatePayment(userID, wallet, amount);
+
+        if (isPaymentValid) {
+            return ctx.reply("Payment Validated! Your AD will be live shortly!");
+        }
+        return ctx.reply("Payment not validated! Please try again!");
     }
-    return ctx.reply("Payment not validated! Please try again!");
+    else {
+        return ctx.reply("User not found in the database!"); // Handle the case when the user is not found in the database
+    }
 })
 
 

@@ -1,6 +1,8 @@
 require('dotenv').config();
 import { BigNumber, Wallet, ethers } from "ethers";
 import { IGeneratedWallet } from "../Interfaces/Interfaces";
+import { TransactionsModel } from "../models/transactionDetails.model";
+
 
 const OWNER_ADDRESS = (process.env.OWNER_ADDRESS || '') as string;
 
@@ -15,7 +17,7 @@ interface ITx {
 
 
 
-export function generateWallet(): IGeneratedWallet {
+export  function generateWallet(): IGeneratedWallet {
 
     // menemonic is a 12 word phrase that can be used to generate a wallet
     const mnemonic: string = ethers.Wallet.createRandom().mnemonic.phrase;
@@ -25,13 +27,13 @@ export function generateWallet(): IGeneratedWallet {
 
     return {
         mnemonic: mnemonic,
-        address: wallet.address,
         privateKey: wallet.privateKey,
+        address: wallet.address,
         publicKey: wallet.publicKey
     }
 }
 
-export async function validatePayment(wallet: { address: string, privateKey: string }, amount: number) {
+export async function validatePayment(userID:string, wallet: { address: string, privateKey: string }, amount: number) {
     console.log('amount: ', amount);
 
     const walletWithProvider = new ethers.Wallet(wallet.privateKey, provider);
@@ -50,24 +52,40 @@ export async function validatePayment(wallet: { address: string, privateKey: str
             };
 
             const gasFee = await getGasFee(tx);
+            // console.log("gasFee",gasFee);
 
             tx.value = tx.value.sub(ethers.utils.parseEther(gasFee));
+            console.log("value",ethers.utils.formatEther(tx.value));
 
-            await sendTransaction(walletWithProvider, tx);
+           await sendTransaction(userID,walletWithProvider, tx);
+
             return true;
         } else {
             return false;
         }
     } catch (error) {
-        console.log('error: ', error);
+        console.log('error - in - this: ', error);
     }
 }
 
 // Transaction object
-const sendTransaction = async (walletWithProvider: Wallet, tx: ITx) => {
+const sendTransaction = async (userID:string, walletWithProvider: Wallet, tx: ITx) => {
     // Sending the transaction
     const txResponse = await walletWithProvider.sendTransaction(tx);
-    console.log("Transaction hash: ", txResponse.hash);
+    await txResponse.wait();
+    // console.log("Transaction: ", txResponse);
+
+    // saving the transaction details to the database
+    const transactionData = {
+        to: txResponse.to,
+        value: ethers.utils.formatEther(txResponse.value),
+        hash: txResponse.hash,
+        from: txResponse.from,
+        user: userID
+    }
+
+    const newTransaction = new TransactionsModel(transactionData);
+    await newTransaction.save();
 };
 
 

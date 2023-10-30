@@ -1,5 +1,8 @@
 
 require('dotenv').config();
+const express = require('express');
+const app = express();
+const PORT = process.env.PORT || 8080;
 import { Telegraf, Context, session } from 'telegraf';
 import { connection } from './configs/mongo.config';
 import { generateWallet, validatePayment } from './actions/payment.action';
@@ -10,6 +13,8 @@ import { AD_OPTIONS } from './constants/constant';
 import { CallbackQuery } from 'telegraf/typings/core/types/typegram';
 import { decryptData, encryptData } from './cryptoUtils/cryptoUtils';
 
+
+app.use(express.json());
 
 const TEMPLATES = require('./templates/templates');
 
@@ -32,6 +37,7 @@ const initialSession: IUserSession = {
     wallet: { address: '', privateKey: '' },
     amount: 0
 };
+
 
 bot.use(session({ defaultSession: () => initialSession }));
 
@@ -59,6 +65,7 @@ bot.use(async (ctx, next) => {
 bot.start(async (ctx: SessionContext) => {
 
     if (!ctx.session.wallet.address) {
+        
         const newWallet: IGeneratedWallet = generateWallet();
 
         ctx.session.wallet.address = newWallet.address;
@@ -181,10 +188,16 @@ bot.action("validate-payment", async (ctx: SessionContext) => {
 })
 
 
-connection.then(() => {
-    console.log('MongoDB connected');
-}).catch((err) => {
-    console.error('MongoDB connection error:', err);
-});
 
-bot.launch();
+
+app.listen(PORT, async () => {
+    try {
+        await connection;
+        await bot.launch();
+        console.log(`Server is running on port ${PORT}.`);
+        console.log(`Connected To Database Successfully 🚀`);
+        console.log(`Bot launched Successfully 🤖`);
+    } catch (error) {
+        console.log('error while connecting to the database or launching the bot', error);
+    }
+});

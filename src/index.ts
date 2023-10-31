@@ -30,6 +30,7 @@ interface SessionContext extends Context {
     session: IUserSession
 }
 
+// const bot = new Bot(process.env.TELEGRAM_TOKEN || "");
 const bot = new Telegraf<SessionContext>(process.env.BOT_TOKEN || '');
 
 
@@ -193,7 +194,7 @@ bot.action("validate-payment", async (ctx: SessionContext) => {
 app.listen(PORT, async () => {
     try {
         await connection;
-        await bot.launch();
+        bot.launch();
         console.log(`Server is running on port ${PORT}.`);
         console.log(`Connected To Database Successfully 🚀`);
         console.log(`Bot launched Successfully 🤖`);

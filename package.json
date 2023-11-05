@@ -2,11 +2,13 @@
   "name": "payment-bot",
   "version": "1.0.0",
   "description": "This bot will be for taking payment on chain by tg",
-  "main": "index.ts",
+  "main": "dist/index.js",
+  "type": "commonjs",
   "scripts": {
     "start": "node dist/index.js",
+    "dev": "nodemon --exec ts-node src/index.ts",
     "build": "tsc",
-    "dev": "nodemon --exec ts-node src/index.ts"
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "vishwa vivek yadav",
   "license": "ISC",
@@ -22,5 +24,8 @@
     "telegraf": "^4.14.0",
     "telegram-typings": "^5.0.0",
     "typescript": "^5.2.2"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.20"
   }
 }

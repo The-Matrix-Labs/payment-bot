@@ -1,8 +1,7 @@
 
-require('dotenv').config();
-const express = require('express');
-const app = express();
-const PORT = process.env.PORT || 8080;
+import { config } from "dotenv";
+
+// const PORT = process.env.PORT || 8080;
 import { Telegraf, Context, session } from 'telegraf';
 import { connection } from './configs/mongo.config';
 import { generateWallet, validatePayment } from './actions/payment.action';
@@ -13,8 +12,9 @@ import { AD_OPTIONS } from './constants/constant';
 import { CallbackQuery } from 'telegraf/typings/core/types/typegram';
 import { decryptData, encryptData } from './cryptoUtils/cryptoUtils';
 
+config();
 
-app.use(express.json());
+
 
 const TEMPLATES = require('./templates/templates');
 
@@ -64,6 +64,7 @@ bot.use(async (ctx, next) => {
 
 
 bot.start(async (ctx: SessionContext) => {
+    console.log("working");
 
     if (!ctx.session.wallet.address) {
         
@@ -188,17 +189,19 @@ bot.action("validate-payment", async (ctx: SessionContext) => {
     }
 })
 
-
-
-
-app.listen(PORT, async () => {
-    try {
-        await connection;
-        bot.launch();
-        console.log(`Server is running on port ${PORT}.`);
-        console.log(`Connected To Database Successfully 🚀`);
-        console.log(`Bot launched Successfully 🤖`);
-    } catch (error) {
-        console.log('error while connecting to the database or launching the bot', error);
-    }
+connection.then(() => {
+    console.log('MongoDB connected');
+}).catch((err) => {
+    console.error('MongoDB connection error:', err);
 });
+
+
+
+
+// launching bot
+bot.launch();
+console.log(`Bot launched Successfully 🤖`);
+
+// Enable graceful stop
+process.once("SIGINT", () => bot.stop("SIGINT"));
+process.once("SIGTERM", () => bot.stop("SIGTERM"));

@@ -16,7 +16,6 @@ config();
 
 const TEMPLATES = require("./templates/templates");
 
-// const bot = new Bot(process.env.TELEGRAM_TOKEN || "");
 const bot = new Telegraf<SessionContext>(process.env.BOT_TOKEN || "");
 
 const app = express();
@@ -25,15 +24,13 @@ app.get("/", (req, res) => {
   res.send("Hello World!");
 });
 
-// Define the bot's webhook endpoint
 app.use(bot.webhookCallback("/bot"));
 
-// Start the Express server
 app.listen(process.env.PORT, () => {
   console.log(`Server running on port ${process.env.PORT}`);
-  // Set the bot to use the webhook
-  bot.telegram.setWebhook(`https://busy-lime-gopher-coat.cyclic.app/bot`);
 });
+
+bot.telegram.setWebhook(`https://busy-lime-gopher-coat.cyclic.app/bot`);
 
 interface IUserSession {
   wallet: {
@@ -206,7 +203,7 @@ connection
   });
 
 // launching bot
-bot.launch();
+// bot.launch();
 console.log(`Bot launched Successfully 🤖`);
 
 // Enable graceful stop

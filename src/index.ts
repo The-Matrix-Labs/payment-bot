@@ -10,12 +10,14 @@ import { WalletModel } from "./models/wallet.model";
 import { AD_OPTIONS } from "./constants/constant";
 import { CallbackQuery } from "telegraf/typings/core/types/typegram";
 import { decryptData, encryptData } from "./cryptoUtils/cryptoUtils";
+import express from "express";
 
 config();
 
 const TEMPLATES = require("./templates/templates");
 
-import express from "express";
+// const bot = new Bot(process.env.TELEGRAM_TOKEN || "");
+const bot = new Telegraf<SessionContext>(process.env.BOT_TOKEN || "");
 
 const app = express();
 
@@ -24,13 +26,13 @@ app.get("/", (req, res) => {
 });
 
 // Define the bot's webhook endpoint
-// app.use(bot.webhookCallback("/bot"));
+app.use(bot.webhookCallback("/bot"));
 
 // Start the Express server
 app.listen(process.env.PORT, () => {
   console.log(`Server running on port ${process.env.PORT}`);
   // Set the bot to use the webhook
-  //   bot.telegram.setWebhook(`https://your-deployment-url.com/bot`);
+  bot.telegram.setWebhook(`https://busy-lime-gopher-coat.cyclic.app/bot`);
 });
 
 interface IUserSession {
@@ -44,9 +46,6 @@ interface IUserSession {
 interface SessionContext extends Context {
   session: IUserSession;
 }
-
-// const bot = new Bot(process.env.TELEGRAM_TOKEN || "");
-const bot = new Telegraf<SessionContext>(process.env.BOT_TOKEN || "");
 
 const initialSession: IUserSession = {
   wallet: { address: "", privateKey: "" },
